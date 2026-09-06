@@ -5,13 +5,13 @@ unit, and a cloud dashboard of every drive.
 
 A Feather M4 CAN on the OBD port polls the Bosch MED17.5 ECU over VW TP 2.0 /
 KWP2000 at 15 to 18 Hz and streams RealDash frames over USB. On the head unit,
-a small Python daemon in Termux feeds RealDash, logs every drive, and uploads
-the logs to Cloudflare R2 when the car is back on home WiFi. A Cloudflare
+a small Python daemon in Termux feeds RealDash and logs every drive. Back on
+home WiFi, the logs go to Cloudflare R2. A Cloudflare
 Worker renders the drives: charts, full-rate pulls, GPS track, markers.
 
 This is one person's build for one car, shared so another VW owner can see
 how it was done and reuse the parts that fit. It is not a product. Read
-"Will this work on my car" before buying anything.
+"Compatibility" before buying anything.
 
 ## Screenshots
 
@@ -29,7 +29,7 @@ fabricated drive, see `cloud/testdata/`):
 
 ![Cloud dashboard](docs/images/cloud-dashboard.png)
 
-## How it fits together
+## Architecture
 
     OBD port (CAN-H, CAN-L, GND)
       |
@@ -59,7 +59,7 @@ Two facts shape the whole design and are worth knowing before reading code:
    device and re-exposes it as a local TCP socket; everything else is plain
    Python in Termux.
 
-## Will this work on my car
+## Compatibility
 
 The protocol layer (`board/tp20.py`, `board/uds.py`) is generic VAG TP 2.0 /
 KWP2000 and ISO-TP / UDS. The channel map is not. Everything in
@@ -125,7 +125,7 @@ needs yours is marked `CHANGE ME` or uses a placeholder such as `<deck-ip>`,
 
 Each step has a longer document; this is the sequence.
 
-### 1. Board on the bench
+### 1. Board
 
 1. Flash CircuitPython 10.x onto the Feather (UF2 from circuitpython.org).
    The board originally shipped with a 2021 beta, which cost hours; check the
