@@ -1,8 +1,5 @@
 # Reliability: why drives get lost, and the plan
 
-Full write-up (charts, evidence, tiers):
-https://claude.ai/code/artifact/10cb3ffc-88a3-4a84-82a6-9fcc9771d297
-
 ## The finding
 
 Nine failures so far. **None of them were CAN, decoding, or data problems.**
