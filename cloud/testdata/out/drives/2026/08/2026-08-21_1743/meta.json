@@ -1,0 +1,20 @@
+{
+ "session": "2026-08-21_1743",
+ "start_unix": 1787359380.0,
+ "end_unix": 1787360459.9285715,
+ "vin": "WVWZZZ13ZAV000000",
+ "dtcs_at_start": [],
+ "ident": {
+  "ecu": "MED17.5",
+  "note": "fabricated by make_testdata.py"
+ },
+ "counters": {
+  "baseline_rows": 1080,
+  "burst_rows": 1029,
+  "burst_segments": 3,
+  "reconnects": 0
+ },
+ "upload": {
+  "state": "testdata"
+ }
+}

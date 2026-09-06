@@ -1,0 +1,42 @@
+# Never commit credentials. secrets/r2-uploader.env holds the car's
+# bucket-scoped R2 token (see docs/PLAN-deck.md, Cloud section).
+secrets/*
+!secrets/*.env.example
+*.env
+!*.env.example
+
+# Local logs and scratch
+drive-logs/
+*.pyc
+__pycache__/
+.deck-ip
+.deck-sweep.tmp
+COMMIT_MSG.tmp
+captures/
+
+# GUI-automation debris.  The RealDash editor was driven by screenshot-and-
+# click (see dash/EDITOR-NOTES.md), which left ~530 full-screen captures
+# loose in dash/ -- 1.2 GB of them.  They are a byproduct of driving the
+# editor, not an input to any build, so they stay out of history.
+dash/*.png
+!dash/preview/*.png
+
+# Scratch .rd experiments.  The snapshots the pipeline actually reads are
+# named explicitly and committed; these are one-off probes.
+dash/*-test.rd
+dash/*.tmp.rd
+dash/*-candidate.rd
+dash/*-fresh.rd
+dash/probe-*.rd
+
+# Timestamped board/deck pulls taken before each deploy.
+backups/
+
+# Third-party APKs staged for the deck (termux, usb-telnet, gpstest).  ~50 MB
+# of redistributed binaries that are not ours and are re-downloadable; they
+# stay on disk but out of the repo.
+apk/
+
+# Local wrangler state (local R2, caches, dev bundles). Never commit.
+.wrangler/
+node_modules/

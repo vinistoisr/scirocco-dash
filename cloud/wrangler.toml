@@ -1,0 +1,32 @@
+# wrangler.toml -- the scirocco-dash Worker.
+#
+# One Worker, one R2 bucket, no build step. The dashboard page lives in
+# public/ and is served by the Workers static-assets layer (free, cached,
+# and it answers GET / without even invoking the Worker); src/index.js only
+# runs for /api/* routes that assets do not match. The ASSETS binding lets
+# the Worker hand a request back to the asset layer if it ever needs to.
+#
+# Deploy from this directory: npx wrangler deploy   (see README.md)
+
+name = "scirocco-dash"
+main = "src/index.js"
+# Must be <= the day you deploy; bump freely when touching the Worker.
+compatibility_date = "2026-08-01"
+
+# Keep the free plan; nothing here needs Standard.
+workers_dev = true
+
+# CHANGE ME: your own hostname. Its zone must be in the same Cloudflare
+# account (wrangler creates the DNS record + cert on deploy). Delete this
+# whole routes block to run on workers.dev only.
+routes = [
+  { pattern = "scirocco.example.com", custom_domain = true }
+]
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[r2_buckets]]
+binding = "LOGS"
+bucket_name = "scirocco-drives"

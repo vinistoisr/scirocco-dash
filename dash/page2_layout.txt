@@ -1,0 +1,48 @@
+# page 2 value field positions (1280x720 design space)
+# panel | row | label | unit | value x (right edge) | value y (top)
+AIR PATH         | 1 | MAP             | kPa   |  378 |  135
+AIR PATH         | 2 | Baro            | kPa   |  378 |  168
+AIR PATH         | 3 | Intake air      | °C    |  378 |  201
+AIR PATH         | 4 | Charge air      | °C    |  378 |  234
+AIR PATH         | 5 | Ambient         | °C    |  378 |  267
+AIR PATH         | 6 | MAF             | g/s   |  378 |  300
+AIR PATH         | 7 | Boost peak      | bar   |  378 |  333
+AIR PATH         | 8 | Engine load     | %     |  378 |  366
+FUEL SYSTEM      | 1 | Throttle        | %     |  792 |  135
+FUEL SYSTEM      | 2 | Pedal           | %     |  792 |  168
+FUEL SYSTEM      | 3 | Injection       | ms    |  792 |  201
+FUEL SYSTEM      | 4 | Rail pressure   | bar   |  792 |  234
+FUEL SYSTEM      | 5 | Rail spec       | bar   |  792 |  267
+FUEL SYSTEM      | 6 | Rail actual     | bar   |  792 |  300
+FUEL SYSTEM      | 7 | Pump duty       | %     |  792 |  333
+FUEL SYSTEM      | 8 | Fuel temp       | °C    |  792 |  366
+MIXTURE & DRIVELINE | 1 | Lambda cmd      | -     | 1206 |  135
+MIXTURE & DRIVELINE | 2 | Trim short      | %     | 1206 |  168
+MIXTURE & DRIVELINE | 3 | Trim long       | %     | 1206 |  201
+MIXTURE & DRIVELINE | 4 | Gear            | -     | 1206 |  234
+MIXTURE & DRIVELINE | 5 | Road speed      | km/h  | 1206 |  267
+MIXTURE & DRIVELINE | 6 | Steering        | °     | 1206 |  300
+MIXTURE & DRIVELINE | 7 | Steering raw    | cts   | 1206 |  333
+MIXTURE & DRIVELINE | 8 | Run time        | s     | 1206 |  366
+CHASSIS  (DCC)   | 1 | Damper FL       | -     |  378 |  447
+CHASSIS  (DCC)   | 2 | Damper FR       | -     |  378 |  480
+CHASSIS  (DCC)   | 3 | Damper RL       | -     |  378 |  513
+CHASSIS  (DCC)   | 4 | Damper RR       | -     |  378 |  546
+CHASSIS  (DCC)   | 5 | Ride height FL  | V     |  378 |  579
+CHASSIS  (DCC)   | 6 | Ride height FR  | V     |  378 |  612
+CHASSIS  (DCC)   | 7 | Ride height R   | V     |  378 |  645
+CHASSIS  (DCC)   | 8 | Catalyst        | °C    |  378 |  678
+TRIP & FAULTS    | 1 | Odometer        | km    |  792 |  447
+TRIP & FAULTS    | 2 | Since clear     | km    |  792 |  480
+TRIP & FAULTS    | 3 | Fault count     | -     |  792 |  513
+TRIP & FAULTS    | 4 | Fault 1         | -     |  792 |  546
+TRIP & FAULTS    | 5 | Fault 2         | -     |  792 |  579
+TRIP & FAULTS    | 6 | Fault 3         | -     |  792 |  612
+TRIP & FAULTS    | 7 | Fault 4         | -     |  792 |  645
+LINK HEALTH      | 1 | Sample rate     | Hz    | 1206 |  447
+LINK HEALTH      | 2 | Reconnects      | -     | 1206 |  480
+LINK HEALTH      | 3 | Aux visits      | -     | 1206 |  513
+LINK HEALTH      | 4 | Aux fails       | -     | 1206 |  546
+LINK HEALTH      | 5 | Gear age        | s     | 1206 |  579
+LINK HEALTH      | 6 | CAN box age     | s     | 1206 |  612
+LINK HEALTH      | 7 | Check engine    | -     | 1206 |  645

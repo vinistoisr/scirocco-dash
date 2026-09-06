@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  scirocco_realdash.xml - RealDash CAN channel description for the
+  2009 Scirocco 2.0 TSI feed (Feather M4 CAN over USB serial).
+
+  Copy this file to the head unit (or keep it beside RealDash on Windows),
+  then in RealDash:
+      Garage -> Connections -> Add connection -> RealDash CAN
+      -> Serial (USB) -> 115200 baud -> select this XML.
+
+  Byte offsets must match realdash.py. Every value is sent as a scaled
+  integer and divided back down here. Frames carrying anything that can go
+  negative are signed, so vacuum and sub-zero ambient read correctly instead
+  of wrapping to 65000-something.
+
+  targetIds are RealDash built-ins, so stock dashboards bind on their own:
+    12 battery volts   14 coolant temp   17 fuel trim short  18 fuel trim long
+    27 intake air      31 manifold pressure                  35 injector pulse
+    37 engine speed    38 ignition timing                    42 throttle
+    81 vehicle speed   152 oil temp      270 boost target
+  Values with only a name appear under that name when editing a gauge.
+
+  Frames:
+    0xC80  rpm, manifold pressure, engine load, intake air temp
+    0xC81  boost actual / target / peak, N75 wastegate duty
+    0xC82  baro, fault count, reconnects, sample rate     (link health)
+    0xC83  coolant, oil, battery, road speed
+    0xC84  ambient, MAF, throttle, injection time
+    0xC85  fuel trims, charge air temp
+    0xC86  stored fault codes
+    0xC88  ignition timing, rail pressure, lambda, pedal  (tuning)
+    0xC89  knock retard, cylinders 1-4                    (tuning)
+    0xC8A  odometer, catalyst temp, run time, trip
+    0xC90  buttons, RealDash -> board
+
+  CONFIDENCE, so nothing here is trusted further than it deserves:
+    Confirmed  rpm, boost specified/actual, load, N75, coolant, IAT, MAF,
+               throttle, road speed, battery, fuel trims, injection time,
+               odometer (checked against the dash at 185885 km), and
+               ignition timing (block 003 and EOBD PID 0x0E both said -1.5).
+    Inferred   oil temp, ambient temp, charge air temp. Sensible values in
+               the right places, but not documented. Confirm oil temp on a
+               COLD START: coolant should climb fast while oil lags.
+    Unverified scale  knock retard. Reads exactly 0 at idle, which is
+               correct, but nothing knocks at idle to calibrate degrees.
+               Check against a VCDS or tuner log under load.
+    Snapshot only, NOT live  fuel rail pressure, lambda, catalyst temp,
+               pedal, run time, distance since clear. This ECU closes the
+               TP 2.0 channel on every EOBD request, so these are read once
+               at startup and then hold. They are idle values, not
+               live readings - do not tune on them.
+-->
+<RealDashCAN version="2">
+    <frames>
+
+        <!-- 0xC80: core engine data -->
+        <frame id="0xC80" endianness="little" signed="false" timeout="3000">
+            <value targetId="37"  offset="0" length="2"></value>
+            <value targetId="31"  offset="2" length="2" units="kPA"
+                   conversion="V*0.1"></value>
+            <value targetId="100" offset="4" length="2" units="%"
+                   conversion="V*0.1" rangeMin="0" rangeMax="100"></value>
+            <value targetId="27"  offset="6" length="2" units="K"
+                   conversion="V*0.1"></value>
+        </frame>
+
+        <!-- 0xC81: boost, gauge-relative (negative under vacuum) -->
+        <frame id="0xC81" endianness="little" signed="true" timeout="3000">
+            <value targetId="83"       offset="0" length="2" units="bar"
+                   conversion="V*0.001" rangeMin="-1" rangeMax="2.5"></value>
+            <value targetId="270"      offset="2" length="2" units="bar"
+                   conversion="V*0.001"></value>
+            <!-- The same boost word again, as a plain NAMED channel with no
+                 targetId and no units. RealDash converts a built-in pressure
+                 channel into its own pressure unit: bound to targetId 83 the
+                 gauge read -10.1 for a true -0.695 bar, because -0.695 bar is
+                 -10.08 psi. The dial face is drawn in bar, so the gauges bind
+                 to this unitless copy instead and RealDash leaves the number
+                 alone. displayOnly keeps it out of the logs, where targetId
+                 83 already records it as `boost`. -->
+            <value name="Boost Live" offset="0" length="2"
+                   conversion="V*0.001" displayOnly="true"></value>
+            <value name="Boost Peak"   offset="4" length="2" units="bar"
+                   conversion="V*0.001" rangeMin="-1" rangeMax="2.5"></value>
+            <value targetId="119"      offset="6" length="2" units="%"
+                   conversion="V*0.1" signed="false"
+                   rangeMin="0" rangeMax="100"></value>
+        </frame>
+
+        <!-- 0xC82: link health, handy while proving the setup out -->
+        <frame id="0xC82" endianness="little" signed="false" timeout="5000">
+            <value targetId="11"       offset="0" length="2" units="kPA"
+                   conversion="V*0.1"></value>
+            <value name="Fault Codes"  offset="2" length="2"></value>
+            <value name="Reconnects"   offset="4" length="2"></value>
+            <value name="Sample Rate"  offset="6" length="2"
+                   conversion="V*0.1"></value>
+        </frame>
+
+        <!-- 0xC83: temperatures, electrical, road speed -->
+        <frame id="0xC83" endianness="little" signed="true" timeout="5000">
+            <value targetId="14"  offset="0" length="2" units="C"
+                   conversion="V*0.1"></value>
+            <value targetId="152" offset="2" length="2" units="C"
+                   conversion="V*0.1"></value>
+            <value targetId="12"  offset="4" length="2" units="V"
+                   conversion="V*0.001"></value>
+            <value targetId="81"  offset="6" length="2" units="km/h"
+                   conversion="V*0.1"></value>
+        </frame>
+
+        <!-- 0xC84: air path and fuelling -->
+        <frame id="0xC84" endianness="little" signed="true" timeout="5000">
+            <value targetId="173"      offset="0" length="2" units="C"
+                   conversion="V*0.1" rangeMin="-40" rangeMax="60"></value>
+            <value targetId="30"       offset="2" length="2"
+                   conversion="V*0.01" rangeMin="0" rangeMax="250"></value>
+            <value targetId="42"       offset="4" length="2" units="%"
+                   conversion="V*0.1"></value>
+        </frame>
+
+        <!-- 0xC85: closed-loop fuel trims and charge air -->
+        <frame id="0xC85" endianness="little" signed="true" timeout="5000">
+            <value targetId="17" offset="0" length="2" units="%"
+                   conversion="V*0.1"></value>
+            <value targetId="102" offset="2" length="2" units="%"
+                   conversion="V*0.1"></value>
+            <value name="Charge Air Temp" offset="4" length="2" units="C"
+                   conversion="V*0.1" rangeMin="-40" rangeMax="120"></value>
+        </frame>
+
+        <!-- 0xC88: the tuning set. Ignition timing is confirmed against
+             EOBD PID 0x0E; rail pressure and lambda come from EOBD. -->
+        <frame id="0xC88" endianness="little" signed="true" timeout="5000">
+            <value targetId="202" offset="2" length="2" units="bar"
+                   conversion="V*0.1" rangeMin="0" rangeMax="200"></value>
+            <value name="Lambda Commanded" offset="4" length="2"
+                   conversion="V*0.001" rangeMin="0.6" rangeMax="1.4"></value>
+            <value name="Pedal Position" offset="6" length="2" units="%"
+                   conversion="V*0.1" rangeMin="0" rangeMax="100"></value>
+        </frame>
+
+        <!-- 0xC89: knock retard per cylinder. Reads 0 at idle, as it should.
+             The scale is NOT verified against a knocking engine yet. -->
+        <frame id="0xC89" endianness="little" signed="true" timeout="5000">
+            <value name="Knock Cyl 1" offset="0" length="2" units="deg"
+                   conversion="V*0.1" rangeMin="-12" rangeMax="2"></value>
+            <value name="Knock Cyl 2" offset="2" length="2" units="deg"
+                   conversion="V*0.1" rangeMin="-12" rangeMax="2"></value>
+            <value name="Knock Cyl 3" offset="4" length="2" units="deg"
+                   conversion="V*0.1" rangeMin="-12" rangeMax="2"></value>
+            <value name="Knock Cyl 4" offset="6" length="2" units="deg"
+                   conversion="V*0.1" rangeMin="-12" rangeMax="2"></value>
+        </frame>
+
+        <!-- 0xC8A: odometer arrives as the raw 10 km counter because the
+             real value does not fit in 16 bits; multiply it back here. -->
+        <frame id="0xC8A" endianness="little" signed="false" timeout="10000">
+            <value targetId="78" offset="0" length="2" units="km"
+                   conversion="V*10"></value>
+            <value name="Catalyst Temp" offset="2" length="2" units="C"
+                   conversion="V*0.1"></value>
+            <value targetId="33" offset="4" length="2"></value>
+            <value name="Distance Since Clear" offset="6" length="2"
+                   units="km"></value>
+        </frame>
+
+        <!-- 0xC86: stored fault codes. The raw 16-bit value doubles as the
+             VAG 5-digit number in decimal, so known codes get named here
+             and anything unrecognised still shows as a number. -->
+        <frame id="0xC86" endianness="little" signed="false" timeout="10000">
+            <value name="Fault 1" offset="0" length="2"
+                   enum="0:none,564:P0234 overboost,8801:P2261 diverter valve"></value>
+            <value name="Fault 2" offset="2" length="2"
+                   enum="0:none,564:P0234 overboost,8801:P2261 diverter valve"></value>
+            <value name="Fault 3" offset="4" length="2" enum="0:none"></value>
+            <value name="Fault 4" offset="6" length="2" enum="0:none"></value>
+        </frame>
+
+        <!-- 0xC87: warning lamps, as clean 0/1 flags.
+             The MIL is bound to RealDash's built-in Check Engine Light so
+             every stock dashboard lights it with no configuration. It is a
+             separate flag rather than the fault COUNT on purpose: RealDash
+             reads a lamp's low bit, so a count of 2 would read as OFF. -->
+        <frame id="0xC87" endianness="little" signed="false" timeout="10000">
+            <value targetId="65" offset="0" length="2"></value>
+            <value name="Overtemp Warning" offset="2" length="2"></value>
+            <value name="Knock Warning"    offset="4" length="2"></value>
+            <value name="Boost Deviation Warning" offset="6" length="2"></value>
+        </frame>
+
+        <!-- 0xC90: buttons, RealDash -> board. Bind a button to set a value
+             to 1; the board acts on the 0->1 edge and does nothing while it
+             stays at 1, so set it back to 0 to arm it again.
+
+             Clear Codes WRITES TO THE ECU and is refused above 0 km/h. -->
+        <frame id="0xC8B" endianess="little" size="8">
+    <!-- Gear, steering angle and the two front ride-height sensors.
+         These are refreshed a few times a minute, not at frame rate: a
+         second TP2.0 channel cannot be held open alongside the engine's
+         without collapsing it to 4% of baseline, so auxmods.py visits the
+         other modules one at a time. Values are held between visits. -->
+    <value name="gear" targetId="25" offset="0" length="2" signed="true"
+           conversion="V*1"/>
+    <value name="steering_counts" offset="2" length="2" signed="true"
+           conversion="V*1"/>
+    <value name="ride_height_fl" offset="4" length="2" units="V"
+           conversion="V*0.001"/>
+    <value name="ride_height_fr" offset="6" length="2" units="V"
+           conversion="V*0.001"/>
+  </frame>
+
+  <frame id="0xC8C" endianess="little" size="8">
+    <!-- The four DCC damper channels, raw. 0 at rest, ~45 while moving.
+         Formula 24 is not decoded yet so no unit is claimed. -->
+    <value name="damper_1" offset="0" length="2" conversion="V*1"/>
+    <value name="damper_2" offset="2" length="2" conversion="V*1"/>
+    <value name="damper_3" offset="4" length="2" conversion="V*1"/>
+    <value name="damper_4" offset="6" length="2" conversion="V*1"/>
+  </frame>
+
+  <frame id="0xC8D" endianess="little" size="8">
+    <value name="ride_height_rear" offset="0" length="2" units="V"
+           conversion="V*0.001"/>
+    <value name="aux_visits" offset="2" length="2" conversion="V*1"/>
+    <value name="aux_fails" offset="4" length="2" conversion="V*1"/>
+    <value name="gear_age_s" offset="6" length="2" units="s" conversion="V*1"/>
+  </frame>
+
+  <frame id="0xC91" endianess="little" size="8">
+    <!-- Published even when the auxiliary reader is disabled so RealDash
+         cannot leave an old DCC snapshot looking live. 65535 is the
+         explicit unavailable sentinel for the age value. -->
+    <value name="dcc_age_s" offset="0" length="2" units="s"
+           conversion="V*1" enum="65535:--"/>
+    <value name="dcc_status" offset="2" length="2"
+           conversion="V*1"
+           enum="0:DCC DATA UNAVAILABLE,1:DCC DATA FRESH,2:DCC DATA STALE"/>
+  </frame>
+
+  <frame id="0xC8F" endianess="little" size="8">
+    <!-- Fuel supply, measuring block 106. All four fields are documented
+         for the 2.0 TSI and were confirmed against this car: rail
+         specified/actual agreed with EOBD PID 0x23 to 0.03 bar, and pump
+         duty read 49.8% at idle against a documented 35-55% normal band.
+         Rail pressure here is ABSOLUTE; 0xC88 carries the gauge value.
+         Pump duty over ~70% means a failing or restricted pump. -->
+    <value name="fuel_pump_duty" offset="0" length="2" units="%"
+           conversion="V*0.1"/>
+    <value name="fuel_temp" offset="2" length="2" signed="true" units="C"
+           conversion="V*0.1"/>
+    <value name="rail_spec_bar_abs" offset="4" length="2" units="bar"
+           conversion="V*0.1"/>
+    <value name="rail_actual_bar_abs" offset="6" length="2" units="bar"
+           conversion="V*0.1"/>
+  </frame>
+
+  <frame id="0xC8E" endianess="little" size="8">
+    <!-- NOT from the board: deck/canbox.py reads the head unit's
+         comfort-bus CAN box log and injects this frame into the tee
+         (127.0.0.1:35002). Turn signals blink at their real ~2.5 Hz;
+         steering is ~1 count per degree, negative = left. canbox_age is
+         seconds since the CAN box last said anything - stale means the
+         launcher's "Export CANBUS Log" toggle is off. docs/CANBOX.md. -->
+    <value name="turn_left" targetId="160" offset="0" length="2"
+           conversion="V*1"/>
+    <value name="turn_right" targetId="161" offset="2" length="2"
+           conversion="V*1"/>
+    <value name="steering_deg" offset="4" length="2" signed="true"
+           units="deg" conversion="V*1"/>
+    <value name="canbox_age" offset="6" length="2" units="s"
+           conversion="V*1"/>
+  </frame>
+
+  <frame id="0xC92" endianess="little" signed="false" size="8">
+    <!-- Ghost-needle visibility toggles: RealDash-LOCAL scratch values,
+         skipped by frame_schema.py (display-only). Nothing ever transmits
+         this frame, so whatever a gauge's tap action sets here sticks.
+         The peak-hold itself is RealDash-native (per-gauge Look'n Feel ->
+         Special -> History mode: Max, History show time ~5 s) on a
+         separate translucent ghost gauge; bind each face's press action
+         to toggle its value (0/1) and the ghost gauge's visibility to
+         it. -->
+    <value name="Show Ghost Boost" offset="0" length="1" initialValue="1"/>
+    <value name="Show Ghost RPM" offset="1" length="1" initialValue="1"/>
+    <value name="Show Ghost Coolant" offset="2" length="1" initialValue="0"/>
+    <value name="Show Ghost Oil" offset="3" length="1" initialValue="0"/>
+    <value name="Show Ghost Charge" offset="4" length="1" initialValue="0"/>
+    <value name="Show Ghost Battery" offset="5" length="1" initialValue="0"/>
+  </frame>
+
+        <!-- 0xC93: spark advance and injector pulse width, sent EVERY cycle.
+             Both are read in boost.py's fast tier but used to ship only in
+             the slow block, so a fresh sample could wait up to five cycles.
+             They are declared here and nowhere else: 0xC88 word 0 and 0xC84
+             word 3 still carry the same bytes, but a channel must appear
+             once or the logger would emit two columns for it. -->
+        <frame id="0xC93" endianness="little" signed="true" timeout="3000">
+            <value targetId="38" offset="0" length="2" units="deg"
+                   conversion="V*0.1"></value>
+            <value targetId="35" offset="2" length="2"
+                   conversion="V*0.01"></value>
+        </frame>
+
+        <!-- 0xC94: the outward halves of the two-way trim and steering
+             bars, already clamped by the board (see split_frame there).
+             RealDash cannot do this itself: a right-to-left bar draws the
+             MAGNITUDE of its input instead of clamping at zero, so a half
+             anchored on a shared zero line lights for both signs, and it
+             cannot be hidden by level colour or by a transparent fill.
+             displayOnly keeps them out of the drive logs, where they would
+             be derivable from trim_short/trim_long/steering_deg. -->
+        <frame id="0xC94" endianness="little" signed="false" timeout="5000">
+            <value name="Trim Short Negative" offset="0" length="2" units="%"
+                   conversion="V*0.1" displayOnly="true"></value>
+            <value name="Trim Long Negative" offset="2" length="2" units="%"
+                   conversion="V*0.1" displayOnly="true"></value>
+            <value name="Steering Left" offset="4" length="2" units="deg"
+                   conversion="V*1" displayOnly="true"></value>
+        </frame>
+
+  <frame id="0xC90" endianness="little" signed="false" writeInterval="500">
+            <value name="Cmd Clear Codes"   offset="0" length="2"
+                   initialValue="0" enum="0:idle,1:CLEAR"></value>
+            <value name="Cmd Reset Peak"    offset="2" length="2"
+                   initialValue="0" enum="0:idle,1:RESET"></value>
+            <value name="Cmd Refresh Codes" offset="4" length="2"
+                   initialValue="0"></value>
+            <!-- Restarts code.py so a freshly-copied firmware file actually
+                 takes effect. Writing to CIRCUITPY from the head unit does
+                 NOT trigger CircuitPython auto-reload, so without this a
+                 deploy silently waits for the next ignition cycle. Does not
+                 re-run boot.py: USB layout changes still need a power cycle. -->
+            <value name="Cmd Reload Firmware" offset="6" length="2"
+                   initialValue="0"></value>
+        </frame>
+
+    </frames>
+</RealDashCAN>
